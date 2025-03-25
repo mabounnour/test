@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Responsive Chat</title>
+    <style>
+        /* General Reset */
+        body, html {
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: #f7f7f7;
+            height: 100%;
+        }
+
+        /* Main Container */
+        .chat-container {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            max-width: 600px;
+            margin: 0 auto;
+            background-color: #fff;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Messages Area */
+        .messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 15px;
+            border-bottom: 1px solid #e5e5ea;
+        }
+
+        /* Message Bubble */
+        .message {
+            max-width: 70%;
+            margin-bottom: 10px;
+            padding: 10px 15px;
+            border-radius: 20px;
+            position: relative;
+            font-size: 15px;
+            line-height: 1.4;
+            word-wrap: break-word;
+        }
+
+        /* Sender (You) */
+        .message.you {
+            align-self: flex-end;
+            background-color: #007aff;
+            color: white;
+            border-bottom-right-radius: 5px;
+        }
+
+        /* Receiver (Other) */
+        .message.other {
+            align-self: flex-start;
+            background-color: #e5e5ea;
+            color: black;
+            border-bottom-left-radius: 5px;
+        }
+
+        /* Tail for Bubbles */
+        .message.you::after {
+            content: '';
+            position: absolute;
+            right: -10px;
+            top: 10px;
+            width: 0;
+            height: 0;
+            border: 10px solid transparent;
+            border-left-color: #007aff;
+        }
+
+        .message.other::after {
+            content: '';
+            position: absolute;
+            left: -10px;
+            top: 10px;
+            width: 0;
+            height: 0;
+            border: 10px solid transparent;
+            border-right-color: #e5e5ea;
+        }
+
+        /* Input Bar */
+        .input-bar {
+            display: flex;
+            align-items: center;
+            padding: 8px;
+            background-color: #f7f7f7;
+            border-top: 1px solid #e5e5ea;
+        }
+
+        .input-bar input {
+            flex: 1;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 25px;
+            font-size: 16px;
+            outline: none;
+        }
+
+        .input-bar button {
+            margin-left: 10px;
+            padding: 10px 15px;
+            background-color: #007aff;
+            color: white;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+
+        .input-bar button:hover {
+            background-color: #005bb5;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 600px) {
+            .chat-container {
+                max-width: 100%;
+                border-radius: 0;
+            }
+
+            .messages {
+                padding: 10px;
+            }
+
+            .message {
+                max-width: 80%; /* Increase message width on smaller screens */
+                font-size: 14px; /* Reduce font size */
+            }
+
+            .input-bar input {
+                font-size: 14px;
+            }
+
+            .input-bar button {
+                font-size: 14px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="chat-container">
+        <!-- Messages Area -->
+        <div id="messages" class="messages"></div>
+
+        <!-- Input Bar -->
+        <div class="input-bar">
+            <input id="chat-input" type="text" placeholder="Type a message..." autocomplete="off" />
+            <button id="send-btn">Send</button>
+        </div>
+    </div>
+
+    <!-- Socket.IO Script -->
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        const socket = io();
+        const messagesDiv = document.getElementById('messages');
+        const chatInput = document.getElementById('chat-input');
+        const sendBtn = document.getElementById('send-btn');
+
+        // Send message on button click or Enter key
+        sendBtn.addEventListener('click', sendMessage);
+        chatInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') sendMessage();
+        });
+
+        function sendMessage() {
+            const message = chatInput.value.trim();
+            if (message) {
+                addMessage('you', message); // Display your message immediately
+                socket.emit('chat message', message); // Send to server
+                chatInput.value = ''; // Clear input field
+            }
+        }
+
+        // Listen for incoming messages
+        socket.on('chat message', (msg) => {
+            addMessage('other', msg);
+        });
+
+        // Add message to the chat window
+        function addMessage(sender, content) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${sender}`;
+            messageDiv.textContent = content;
+
+            // Scroll to bottom after adding message
+            messagesDiv.appendChild(messageDiv);
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        }
+    </script>
+</body>
+</html>
